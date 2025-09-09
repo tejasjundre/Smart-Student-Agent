@@ -3,7 +3,13 @@ import asyncio
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, OpenAIError
 from huggingface_hub import InferenceClient
-from graphviz import Digraph
+# Try to import Graphviz, but don’t fail if it’s missing
+try:
+    from graphviz import Digraph
+    GRAPHVIZ_AVAILABLE = True
+except ImportError:
+    GRAPHVIZ_AVAILABLE = False
+
 
 # 🔐 Load API key from .env (local only)
 load_dotenv()
@@ -34,6 +40,10 @@ def needs_diagram(prompt: str) -> bool:
 # Generate Graphviz fallback diagram
 # -------------------------------
 def generate_graphviz_diagram(question: str):
+    if not GRAPHVIZ_AVAILABLE:
+        return "⚠️ Graphviz not available on this platform."
+    
+    # Example for binary search flowchart
     if "binary search" in question.lower():
         dot = Digraph(comment='Binary Search Flowchart')
         dot.node('A', 'Start')
@@ -42,8 +52,9 @@ def generate_graphviz_diagram(question: str):
         dot.node('D', 'Found / End')
         dot.edges(['AB', 'BC', 'CD'])
         return dot
-    # Add more topics as needed
+
     return "📄 Diagram not available for this topic."
+
 
 # -------------------------------
 # Generate free AI image
