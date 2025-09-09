@@ -48,7 +48,8 @@ MySmartStudyAI/
 
 ## 🖼️ Preview
 
-![MySmartStudyAI UI](images/preview.png)
+![MySmartStudyAI UI](MySmartstudyai/images/preview.png)
+
 
 ---
 
