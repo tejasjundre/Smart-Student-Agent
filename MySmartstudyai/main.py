@@ -2,8 +2,10 @@ import os
 import asyncio
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, OpenAIError
+from huggingface_hub import InferenceClient
+from graphviz import Digraph
 
-# 🔐 Load API key from .env (local only, ignored on Streamlit Cloud)
+# 🔐 Load API key from .env (local only)
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
@@ -17,11 +19,47 @@ client = AsyncOpenAI(
 )
 
 # -------------------------------
-# 🧠 Base function with fallback
+# Hugging Face free image client
+# -------------------------------
+hf_client = InferenceClient("stabilityai/stable-diffusion-2")
+
+# -------------------------------
+# Helper: Detect diagram-related questions
+# -------------------------------
+def needs_diagram(prompt: str) -> bool:
+    keywords = ["diagram", "flowchart", "graph", "illustration", "chart"]
+    return any(word.lower() in prompt.lower() for word in keywords)
+
+# -------------------------------
+# Generate Graphviz fallback diagram
+# -------------------------------
+def generate_graphviz_diagram(question: str):
+    if "binary search" in question.lower():
+        dot = Digraph(comment='Binary Search Flowchart')
+        dot.node('A', 'Start')
+        dot.node('B', 'Check Mid')
+        dot.node('C', 'Left/Right')
+        dot.node('D', 'Found / End')
+        dot.edges(['AB', 'BC', 'CD'])
+        return dot
+    # Add more topics as needed
+    return "📄 Diagram not available for this topic."
+
+# -------------------------------
+# Generate free AI image
+# -------------------------------
+def generate_free_image(prompt: str):
+    try:
+        image = hf_client.text_to_image(prompt)
+        return image  # returns image bytes for Streamlit
+    except:
+        return None
+
+# -------------------------------
+# Base async model with fallback
 # -------------------------------
 async def run_model(prompt: str) -> str:
     try:
-        # ⚡ First try Mistral (fast + good quality)
         response = await client.chat.completions.create(
             model="mistralai/mistral-7b-instruct:free",
             messages=[{"role": "user", "content": prompt}]
@@ -31,7 +69,6 @@ async def run_model(prompt: str) -> str:
     except Exception as e:
         print("⚠️ Mistral failed, switching to LLaMA 3:", e)
         try:
-            # 🔁 Fallback to LLaMA 3 (better reasoning, slightly slower)
             response = await client.chat.completions.create(
                 model="meta-llama/llama-3-8b-instruct:free",
                 messages=[{"role": "user", "content": prompt}]
@@ -43,32 +80,40 @@ async def run_model(prompt: str) -> str:
             return f"⚠️ Unexpected error: {str(e2)}"
 
 # -------------------------------
-# 📚 Academic Q&A
+# Academic Q&A (with image/diagram support)
 # -------------------------------
-async def ask_academic_question(query: str) -> str:
+async def ask_academic_question(query: str):
+    if needs_diagram(query):
+        image = generate_free_image(query)
+        if image:
+            return image  # Streamlit can display image bytes
+        else:
+            return generate_graphviz_diagram(query)  # fallback
+
     prompt = f"Answer the academic question clearly and simply:\n{query}"
     return await run_model(prompt)
 
 # -------------------------------
-# 📖 Study Tips
+# Study Tips
 # -------------------------------
 async def provide_study_tips(topic: str) -> str:
     prompt = f"Give me 5 practical study tips for the topic: {topic}"
     return await run_model(prompt)
 
 # -------------------------------
-# ✂️ Summarizer
+# Summarizer
 # -------------------------------
 async def summarize_text(text: str) -> str:
     prompt = f"Summarize this passage in 3 clear lines:\n{text}"
     return await run_model(prompt)
 
 # -------------------------------
-# ✅ Local test mode
+# Local test mode
 # -------------------------------
 if __name__ == "__main__":
     async def main():
-        print(await ask_academic_question("Explain photosynthesis."))
+        result = await ask_academic_question("Draw a flowchart of binary search")
+        print(result)
         print(await provide_study_tips("Time Management"))
         print(await summarize_text("Python is a popular programming language used in AI."))
 

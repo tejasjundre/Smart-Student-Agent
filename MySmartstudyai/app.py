@@ -2,6 +2,7 @@ import streamlit as st
 import asyncio
 import time
 from main import ask_academic_question, provide_study_tips, summarize_text
+from graphviz import Digraph
 
 # -------------------------------
 # App Config
@@ -45,7 +46,7 @@ with st.sidebar:
 - 📝 Summarize long passages  
 
 ---
-**Version:** 1.0.2
+**Version:** 1.0.3
 """)
     st.markdown("### 🔗 Connect")
     st.markdown("[🌐 GitHub](https://github.com/your-username)  \n[💼 LinkedIn](https://linkedin.com/in/your-link)  \n[📧 Email](mailto:your-email@example.com)")
@@ -92,7 +93,14 @@ if feature == "📘 Academic Q&A":
             st.markdown(f"<div class='user-box'>{question}</div>", unsafe_allow_html=True)
             with st.spinner("💡 Thinking..."):
                 answer = run_async(ask_academic_question, question)
-            stream_response_with_progress(answer)
+
+            # Display based on type
+            if hasattr(answer, "render") or isinstance(answer, Digraph):
+                st.graphviz_chart(answer)
+            elif isinstance(answer, bytes):
+                st.image(answer)
+            else:
+                stream_response_with_progress(answer)
         else:
             st.warning("⚠️ Please enter a valid question.")
 
@@ -130,4 +138,4 @@ elif feature == "📝 Text Summary":
 # Footer
 # -------------------------------
 st.markdown("<hr>", unsafe_allow_html=True)
-st.markdown("<p class='footer'>Made with ❤️ by Tejas | Powered by OpenAI</p>", unsafe_allow_html=True)
+st.markdown("<p class='footer'>Made with ❤️ by Tejas | Powered by Free AI Models</p>", unsafe_allow_html=True)
