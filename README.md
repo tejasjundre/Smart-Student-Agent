@@ -30,7 +30,7 @@ Paste a passage or ask an academic question, and get **clear, concise, and actio
 
 ## 🖼️ Preview
 
-![MySmartStudyAI UI](images/preview.jpg)  
+![MySmartStudyAI UI](images/preview.png)  
 
 ---
 
