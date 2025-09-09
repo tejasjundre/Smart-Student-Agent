@@ -5,7 +5,8 @@ from openai import AsyncOpenAI
 
 # 🔐 Load API key from .env
 load_dotenv()
-api_key = os.getenv("LITELLM_API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
+
 
 # ✅ LiteLLM-compatible OpenRouter client
 client = AsyncOpenAI(
