@@ -2,7 +2,15 @@ import streamlit as st
 import asyncio
 import time
 from main import ask_academic_question, provide_study_tips, summarize_text
-from graphviz import Digraph
+
+# -------------------------------
+# Optional Graphviz import
+# -------------------------------
+try:
+    from graphviz import Digraph
+    GRAPHVIZ_AVAILABLE = True
+except ImportError:
+    GRAPHVIZ_AVAILABLE = False
 
 # -------------------------------
 # App Config
@@ -79,7 +87,7 @@ def stream_response_with_progress(response_text):
         text += char
         placeholder.markdown(f"<div class='response-box'>{text}</div>", unsafe_allow_html=True)
         progress.progress(min((i+1)/len(response_text), 1.0))
-        time.sleep(0.02)  # controls typing speed
+        time.sleep(0.02)
     progress.empty()
 
 # -------------------------------
@@ -94,8 +102,8 @@ if feature == "📘 Academic Q&A":
             with st.spinner("💡 Thinking..."):
                 answer = run_async(ask_academic_question, question)
 
-            # Display based on type
-            if hasattr(answer, "render") or isinstance(answer, Digraph):
+            # Display diagrams safely if Graphviz available
+            if GRAPHVIZ_AVAILABLE and hasattr(answer, "render") or isinstance(answer, Digraph):
                 st.graphviz_chart(answer)
             elif isinstance(answer, bytes):
                 st.image(answer)
