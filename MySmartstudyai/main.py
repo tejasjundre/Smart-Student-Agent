@@ -3,22 +3,18 @@ import asyncio
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, OpenAIError
 from huggingface_hub import InferenceClient
-# Try to import Graphviz, but don’t fail if it’s missing
-try:
-    from graphviz import Digraph
-    GRAPHVIZ_AVAILABLE = True
-except ImportError:
-    GRAPHVIZ_AVAILABLE = False
 
-
-# 🔐 Load API key from .env (local only)
+# -------------------------------
+# 🔐 Load API key from .env
+# -------------------------------
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
-
 if not api_key:
-    raise ValueError("❌ OPENAI_API_KEY not found. Please set it in .env (local) or Streamlit Secrets (cloud).")
+    raise ValueError("❌ OPENAI_API_KEY not found. Please set it in .env or Streamlit Secrets.")
 
-# ✅ OpenRouter client
+# -------------------------------
+# OpenRouter client (free models)
+# -------------------------------
 client = AsyncOpenAI(
     api_key=api_key,
     base_url="https://openrouter.ai/api/v1/"
@@ -30,31 +26,11 @@ client = AsyncOpenAI(
 hf_client = InferenceClient("stabilityai/stable-diffusion-2")
 
 # -------------------------------
-# Helper: Detect diagram-related questions
+# Detect diagram/image related questions
 # -------------------------------
-def needs_diagram(prompt: str) -> bool:
+def needs_image(prompt: str) -> bool:
     keywords = ["diagram", "flowchart", "graph", "illustration", "chart"]
     return any(word.lower() in prompt.lower() for word in keywords)
-
-# -------------------------------
-# Generate Graphviz fallback diagram
-# -------------------------------
-def generate_graphviz_diagram(question: str):
-    if not GRAPHVIZ_AVAILABLE:
-        return "⚠️ Graphviz not available on this platform."
-    
-    # Example for binary search flowchart
-    if "binary search" in question.lower():
-        dot = Digraph(comment='Binary Search Flowchart')
-        dot.node('A', 'Start')
-        dot.node('B', 'Check Mid')
-        dot.node('C', 'Left/Right')
-        dot.node('D', 'Found / End')
-        dot.edges(['AB', 'BC', 'CD'])
-        return dot
-
-    return "📄 Diagram not available for this topic."
-
 
 # -------------------------------
 # Generate free AI image
@@ -71,6 +47,7 @@ def generate_free_image(prompt: str):
 # -------------------------------
 async def run_model(prompt: str) -> str:
     try:
+        # Primary free model: Mistral
         response = await client.chat.completions.create(
             model="mistralai/mistral-7b-instruct:free",
             messages=[{"role": "user", "content": prompt}]
@@ -91,15 +68,13 @@ async def run_model(prompt: str) -> str:
             return f"⚠️ Unexpected error: {str(e2)}"
 
 # -------------------------------
-# Academic Q&A (with image/diagram support)
+# Academic Q&A with optional image
 # -------------------------------
 async def ask_academic_question(query: str):
-    if needs_diagram(query):
+    if needs_image(query):
         image = generate_free_image(query)
         if image:
             return image  # Streamlit can display image bytes
-        else:
-            return generate_graphviz_diagram(query)  # fallback
 
     prompt = f"Answer the academic question clearly and simply:\n{query}"
     return await run_model(prompt)

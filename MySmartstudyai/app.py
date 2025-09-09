@@ -4,15 +4,6 @@ import time
 from main import ask_academic_question, provide_study_tips, summarize_text
 
 # -------------------------------
-# Optional Graphviz import
-# -------------------------------
-try:
-    from graphviz import Digraph
-    GRAPHVIZ_AVAILABLE = True
-except ImportError:
-    GRAPHVIZ_AVAILABLE = False
-
-# -------------------------------
 # App Config
 # -------------------------------
 st.set_page_config(page_title="📚 MySmartStudyAI", layout="centered")
@@ -101,13 +92,6 @@ if feature == "📘 Academic Q&A":
             st.markdown(f"<div class='user-box'>{question}</div>", unsafe_allow_html=True)
             with st.spinner("💡 Thinking..."):
                 answer = run_async(ask_academic_question, question)
-
-            # Display diagrams safely if Graphviz available
-            if GRAPHVIZ_AVAILABLE and hasattr(answer, "render") or isinstance(answer, Digraph):
-                st.graphviz_chart(answer)
-            elif isinstance(answer, bytes):
-                st.image(answer)
-            else:
                 stream_response_with_progress(answer)
         else:
             st.warning("⚠️ Please enter a valid question.")
@@ -123,7 +107,7 @@ elif feature == "🧠 Study Tips":
             st.markdown(f"<div class='user-box'>{topic}</div>", unsafe_allow_html=True)
             with st.spinner("✨ Generating tips..."):
                 tips = run_async(provide_study_tips, topic)
-            stream_response_with_progress(tips)
+                stream_response_with_progress(tips)
         else:
             st.warning("⚠️ Please enter a topic.")
 
@@ -138,7 +122,7 @@ elif feature == "📝 Text Summary":
             st.markdown(f"<div class='user-box'>{passage[:50]}...</div>", unsafe_allow_html=True)
             with st.spinner("📌 Summarizing..."):
                 summary = run_async(summarize_text, passage)
-            stream_response_with_progress(summary)
+                stream_response_with_progress(summary)
         else:
             st.warning("⚠️ Please paste a passage to summarize.")
 
